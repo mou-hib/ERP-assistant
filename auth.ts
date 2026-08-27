@@ -11,6 +11,9 @@ const ADMIN_USER = {
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Derrière le proxy Vercel, l'URL de base est déduite des en-têtes
+  // x-forwarded-* ; sans trustHost, Auth.js retombe sur localhost:3000.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
