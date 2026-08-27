@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum StatutCommande {
+  EN_ATTENTE
+  CONFIRMEE
+  EXPEDIEE
+  LIVREE
+  ANNULEE
+}
+
+enum ModePaiement {
+  VIREMENT
+  CARTE
+  CHEQUE
+  ESPECES
+}
+
+model Client {
+  id        Int        @id @default(autoincrement())
+  nom       String
+  email     String     @unique
+  telephone String
+  createdAt DateTime   @default(now())
+  commandes Commande[]
+
+  @@map("clients")
+}
+
+model Produit {
+  id             Int             @id @default(autoincrement())
+  nom            String
+  description    String
+  prix           Float
+  stock          Int
+  createdAt      DateTime        @default(now())
+  lignesCommande LigneCommande[]
+
+  @@map("produits")
+}
+
+model Commande {
+  id        Int             @id @default(autoincrement())
+  clientId  Int
+  client    Client          @relation(fields: [clientId], references: [id])
+  date      DateTime
+  statut    StatutCommande  @default(EN_ATTENTE)
+  createdAt DateTime        @default(now())
+  lignes    LigneCommande[]
+  facture   Facture?
+
+  @@map("commandes")
+}
+
+model LigneCommande {
+  id           Int      @id @default(autoincrement())
+  commandeId   Int
+  commande     Commande @relation(fields: [commandeId], references: [id])
+  produitId    Int
+  produit      Produit  @relation(fields: [produitId], references: [id])
+  quantite     Int
+  prixUnitaire Float
+
+  @@map("lignes_commande")
+}
+
+model Facture {
+  id           Int        @id @default(autoincrement())
+  commandeId   Int        @unique
+  commande     Commande   @relation(fields: [commandeId], references: [id])
+  montantTotal Float
+  montantPaye  Float      @default(0)
+  date         DateTime
+  createdAt    DateTime   @default(now())
+  paiements    Paiement[]
+
+  @@map("factures")
+}
+
+model Paiement {
+  id        Int          @id @default(autoincrement())
+  factureId Int
+  facture   Facture      @relation(fields: [factureId], references: [id])
+  montant   Float
+  date      DateTime
+  mode      ModePaiement
+
+  @@map("paiements")
+}
