@@ -1,3 +1,13 @@
+/**
+ * Route POST /api/chat
+ * Pipeline IA en 6 étapes :
+ * 1. Validation de la question (sécurité, longueur)
+ * 2. Génération SQL via Groq (gpt-oss-120b) + schéma BDD
+ * 3. Validation SQL (SELECT uniquement, blocklist)
+ * 4. Exécution via Prisma ($queryRawUnsafe)
+ * 5. Génération réponse française via Groq
+ * 6. Retour JSON { answer, data, sql, count }
+ */
 import { NextResponse } from "next/server";
 import { groq } from "@/lib/groq";
 import { prisma } from "@/lib/prisma";
@@ -99,8 +109,6 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-
-  console.log("[/api/chat] SQL généré :", sql);
 
   // ÉTAPE 3 — Valider le SQL (SELECT uniquement, aucun mot-clé d'écriture)
   if (!/^SELECT\b/i.test(sql) || FORBIDDEN.test(sql)) {

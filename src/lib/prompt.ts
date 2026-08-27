@@ -1,3 +1,9 @@
+/**
+ * Prompt système de génération SQL : décrit le schéma de la base
+ * (tables françaises, format des dates en millisecondes Unix) et les
+ * règles de sécurité (SELECT uniquement, LIMIT 100). La date du jour
+ * est ajoutée à l'exécution par la route /api/chat.
+ */
 export const SYSTEM_PROMPT = `
 Tu es un assistant SQL expert pour un ERP.
 Tu reçois une question en français et tu génères
