@@ -1,0 +1,5 @@
+# Ne jamais téléverser les secrets locaux ni la base de dev :
+# les variables de production sont gérées dans les réglages Vercel.
+.env
+.env.*
+prisma/dev.db*
