@@ -241,9 +241,15 @@ body {
   overflow: hidden;
 }
 
+/* Empêche le contenu large (tableau) d'élargir les colonnes de la grille */
+.dashboard-grid > * {
+  min-width: 0;
+}
+
 @media (max-width: 820px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    height: auto;
     overflow-y: auto;
   }
 }
@@ -698,4 +704,66 @@ body {
 .btn-danger-outline:focus-visible {
   outline: 2px solid var(--danger);
   outline-offset: 2px;
+}
+
+/* ─── Mobile (< 820 px) ─────────────────────────────────────────────────
+   En fin de fichier pour l'emporter sur les règles de base à spécificité
+   égale. Panneaux empilés : chat en haut (55 vh), données en bas (45 vh). */
+@media (max-width: 820px) {
+  .chat-panel {
+    max-height: 55vh;
+  }
+
+  .chat-messages {
+    max-height: 40vh;
+  }
+
+  .chip {
+    font-size: 0.72rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  /* Cibles tactiles confortables (standard iOS : 44 px) */
+  .composer-input {
+    min-height: 44px;
+  }
+
+  .composer-send {
+    width: 44px;
+    height: 44px;
+  }
+
+  .data-panel {
+    max-height: 45vh;
+  }
+
+  .data-body {
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+
+  .data-table {
+    font-size: 0.78rem;
+    min-width: 500px;
+  }
+
+  .data-table th {
+    white-space: normal;
+  }
+
+  /* Les actions d'export sont masquées sur mobile */
+  .data-actions {
+    display: none;
+  }
+
+  .navbar {
+    padding: 0.55rem 0.8rem;
+  }
+
+  .navbar-username {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
