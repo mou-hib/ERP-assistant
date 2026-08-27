@@ -46,10 +46,8 @@ Scénarios complémentaires testés :
 
 ## Limites connues
 
-- **SQLite non persistant sur Vercel** : le système de fichiers étant
-  éphémère, la base est réinitialisée à chaque redéploiement (et les
-  écritures ne survivent pas entre les instances). Pour la production,
-  migrer vers Postgres (Vercel Postgres, Neon…).
+- ~~SQLite non persistant sur Vercel~~ **Résolu** : la base a été migrée
+  vers Turso (libSQL hébergé), persistante et compatible serverless.
 - **Utilisateur unique codé en dur** : pas de gestion réelle des comptes,
   des rôles ni des mots de passe (admin@erp.com uniquement).
 - **Pas de mémoire de conversation** : chaque question est indépendante ;

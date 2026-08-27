@@ -12,6 +12,8 @@ d'un tableau de données.
 - Node.js 18 ou supérieur
 - npm 9 ou supérieur
 - Un compte Groq (gratuit) : [console.groq.com](https://console.groq.com)
+- Un compte Turso (gratuit) : [turso.tech](https://turso.tech) — base de
+  données libSQL hébergée, avec le CLI `turso` installé
 
 ## Installation
 
@@ -29,17 +31,31 @@ cp .env.example .env
 
 Remplir les variables dans `.env` :
 
+- `TURSO_DATABASE_URL` : URL de la base (`turso db show <nom> --url`)
+- `TURSO_AUTH_TOKEN` : token de base de données (`turso db tokens create <nom>`)
 - `AUTH_SECRET` : générer avec `openssl rand -base64 32`
 - `GROQ_API_KEY` : obtenir sur [console.groq.com](https://console.groq.com)
 - `NEXTAUTH_URL` : `http://localhost:3000` en local
 
-## Base de données
+## Base de données (Turso)
 
 ```bash
+# 1. Créer la base
+turso db create erp-assistant
+turso db show erp-assistant --url        # → TURSO_DATABASE_URL
+turso db tokens create erp-assistant     # → TURSO_AUTH_TOKEN
+
+# 2. Appliquer le schéma (les migrations Prisma, dans l'ordre)
+cat prisma/migrations/*/migration.sql | turso db shell erp-assistant
+
+# 3. Générer le client Prisma et remplir la base de démonstration
 npx prisma generate
-npx prisma migrate dev --name init
 npx prisma db seed
 ```
+
+> Note : `prisma migrate dev` ne sait pas se connecter directement à une URL
+> `libsql://` ; les migrations s'appliquent via le CLI `turso` (étape 2).
+> Le seed, lui, passe par l'adaptateur libSQL et fonctionne normalement.
 
 ## Lancement
 
@@ -58,18 +74,19 @@ Mot de passe : admin123
 
 ## Variables d'environnement
 
-| Variable       | Description                    | Obligatoire |
-| -------------- | ------------------------------ | ----------- |
-| `DATABASE_URL` | Chemin vers le fichier SQLite  | Oui         |
-| `AUTH_SECRET`  | Secret JWT pour Auth.js        | Oui         |
-| `GROQ_API_KEY` | Clé API Groq                   | Oui         |
-| `NEXTAUTH_URL` | URL de base de l'application   | Oui         |
+| Variable             | Description                                  | Obligatoire |
+| -------------------- | -------------------------------------------- | ----------- |
+| `TURSO_DATABASE_URL` | URL libSQL de la base Turso                  | Oui         |
+| `TURSO_AUTH_TOKEN`   | Token d'accès à la base Turso                | Oui         |
+| `AUTH_SECRET`        | Secret JWT pour Auth.js                      | Oui         |
+| `GROQ_API_KEY`       | Clé API Groq                                 | Oui         |
+| `NEXTAUTH_URL`       | URL de base de l'application                 | Oui         |
 
 ## Stack technique
 
 - Next.js 14 (App Router)
 - TypeScript + Tailwind CSS
-- Prisma + SQLite
+- Prisma + Turso (libSQL hébergé, via `@prisma/adapter-libsql`)
 - Groq SDK (modèle `openai/gpt-oss-120b`)
 - Auth.js v5 (Credentials, JWT)
 - Vercel (déploiement)
@@ -77,9 +94,10 @@ Mot de passe : admin123
 ## Architecture
 
 Architecture monolithique à couches (N-tier) déployée en environnement
-serverless sur Vercel.
+serverless sur Vercel, avec base de données Turso hébergée (compatible
+serverless, persistante entre les déploiements).
 
-Flux IA : **Question → Groq (SQL) → Prisma → Groq (réponse) → UI**
+Flux IA : **Question → Groq (SQL) → Prisma/Turso → Groq (réponse) → UI**
 
 ## Documentation
 

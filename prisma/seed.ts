@@ -1,6 +1,14 @@
 import { PrismaClient, StatutCommande, ModePaiement } from "@prisma/client";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 
-const prisma = new PrismaClient();
+// Connexion à Turso via l'adaptateur libSQL (les variables viennent du .env,
+// chargé automatiquement par `npx prisma db seed`)
+const adapter = new PrismaLibSQL({
+  url: process.env.TURSO_DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN!,
+});
+
+const prisma = new PrismaClient({ adapter });
 
 // Date de référence : les commandes sont réparties sur les 3 derniers mois
 const NOW = new Date();

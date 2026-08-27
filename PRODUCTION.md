@@ -2,9 +2,9 @@
 
 ## Avant de déployer
 
-- [ ] Remplacer SQLite par Turso (SQLite distribué) ou PostgreSQL —
-      le système de fichiers Vercel est éphémère, la base locale est
-      réinitialisée à chaque déploiement
+- [x] Remplacer SQLite par Turso (SQLite distribué) ou PostgreSQL —
+      fait : la base tourne sur Turso (`@prisma/adapter-libsql`),
+      persistante et compatible serverless
 - [ ] Changer les identifiants admin par défaut
 - [ ] Générer un AUTH_SECRET fort (32+ caractères)
 - [ ] Configurer NEXTAUTH_URL avec le vrai domaine
@@ -17,3 +17,5 @@
 - Next.js → Vercel natif
 - Groq SDK → variables d'environnement Vercel
 - Auth.js → JWT stateless, compatible serverless
+- Turso → variables d'environnement Vercel
+  (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`)
