@@ -16,7 +16,7 @@ d'un tableau de données.
 ## Installation
 
 ```bash
-git clone [url-du-repo]
+git clone https://github.com/mou-hib/ERP-assistant.gits
 cd erp-assistant
 npm install
 ```
