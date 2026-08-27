@@ -61,11 +61,19 @@ Règles importantes :
 - Uniquement des requêtes SELECT. Jamais INSERT, UPDATE, DELETE, DROP.
 - Pour les dates relatives comme "mois dernier" ou "cette semaine",
   utilise les fonctions SQLite : date('now','-1 month'), strftime(), etc.
-- Pour les recherches de noms, utilise LIKE avec % pour la tolérance.
+- Pour les recherches de noms, utilise TOUJOURS LIKE avec % de chaque côté :
+  nom LIKE '%Dupont%'. N'utilise JAMAIS l'égalité (=) sur un nom : la base
+  contient des noms complets ("Marc Dupont"), donc nom = 'Dupont' ne renvoie
+  jamais rien. Cette règle s'applique aussi aux questions de suivi.
 - Joins explicites avec JOIN ... ON ...
 - Limite les résultats à 100 lignes maximum avec LIMIT 100.
-- Les colonnes DATETIME (date, createdAt) stockent des timestamps Unix
-  en MILLISECONDES (INTEGER). Convertis-les toujours avant de comparer
-  ou formater : datetime(colonne/1000, 'unixepoch').
-  Exemple : WHERE datetime(date/1000, 'unixepoch') >= date('now', '-1 month').
+- Les colonnes DATETIME (date, createdAt) sont stockées en TEXTE au format
+  ISO 8601 ("2026-05-31T08:00:00.000+00:00"). Utilise-les directement avec
+  les fonctions SQLite, sans conversion :
+  date(colonne), strftime('%Y-%m', colonne), ou comparaison directe.
+  Exemple : WHERE date >= date('now', 'start of month', '-1 month').
+- ATTENTION : SQLite n'accepte que 'start of day', 'start of month' et
+  'start of year'. Le modificateur 'start of week' N'EXISTE PAS et renvoie
+  NULL (donc aucun résultat). Pour "cette semaine", utilise le lundi courant :
+  date('now', 'weekday 1', '-7 days'). Pour "aujourd'hui" : date('now').
 `;

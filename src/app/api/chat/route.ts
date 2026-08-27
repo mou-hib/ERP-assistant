@@ -1,8 +1,9 @@
 /**
  * Route POST /api/chat
  * Pipeline IA en 6 étapes :
- * 1. Validation de la question (sécurité, longueur)
+ * 1. Validation de la question et de l'historique (sécurité, longueur)
  * 2. Génération SQL via Groq (gpt-oss-120b) + schéma BDD
+ *    + contexte des 4 derniers échanges (questions de suivi)
  * 3. Validation SQL (SELECT uniquement, blocklist)
  * 4. Exécution via Prisma ($queryRawUnsafe)
  * 5. Génération réponse française via Groq
@@ -63,11 +64,40 @@ function sanitizeRows(rows: unknown): Record<string, unknown>[] {
   );
 }
 
+// Mémoire de conversation : seuls les 4 derniers échanges sont transmis
+// au modèle pour résoudre les questions de suivi ("Et pour Martin ?").
+const HISTORY_LIMIT = 4;
+const HISTORY_MSG_MAX_CHARS = 2000;
+
+type HistoryMessage = { role: "user" | "assistant"; content: string };
+
+// Valide et nettoie l'historique reçu du client
+function sanitizeHistory(raw: unknown): HistoryMessage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (m): m is HistoryMessage =>
+        !!m &&
+        typeof m === "object" &&
+        (m.role === "user" || m.role === "assistant") &&
+        typeof m.content === "string" &&
+        m.content.trim() !== ""
+    )
+    .slice(-HISTORY_LIMIT)
+    .map((m) => ({
+      role: m.role,
+      content: m.content.slice(0, HISTORY_MSG_MAX_CHARS),
+    }));
+}
+
 export async function POST(req: Request) {
-  // ÉTAPE 1 — Lire la question
+  // ÉTAPE 1 — Lire la question et l'historique
   let question: unknown;
+  let history: HistoryMessage[] = [];
   try {
-    ({ question } = await req.json());
+    const body = await req.json();
+    question = body.question;
+    history = sanitizeHistory(body.history);
   } catch {
     question = undefined;
   }
@@ -92,6 +122,7 @@ export async function POST(req: Request) {
           content:
             SYSTEM_PROMPT + `\nLa date d'aujourd'hui est: ${new Date().toISOString()}`,
         },
+        ...history,
         { role: "user", content: question },
       ],
       temperature: 0,

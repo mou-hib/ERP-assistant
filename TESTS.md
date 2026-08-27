@@ -50,8 +50,11 @@ Scénarios complémentaires testés :
   vers Turso (libSQL hébergé), persistante et compatible serverless.
 - **Utilisateur unique codé en dur** : pas de gestion réelle des comptes,
   des rôles ni des mots de passe (admin@erp.com uniquement).
-- **Pas de mémoire de conversation** : chaque question est indépendante ;
-  « et pour le mois précédent ? » ne fonctionnera pas.
+- ~~Pas de mémoire de conversation~~ **Résolu** : les 4 derniers messages
+  sont transmis comme contexte, ce qui permet les questions de suivi
+  (« Et celles annulées uniquement ? », « Combien y en a-t-il ? »).
+  La mémoire reste limitée à 4 messages et n'est pas persistée : elle est
+  perdue au rechargement de la page.
 - **Questions complexes** : les questions multi-étapes ou ambiguës peuvent
   générer un SQL incorrect ou une interprétation inattendue. Exemple
   observé : le « chiffre d'affaires du mois dernier » peut varier d'une
@@ -62,6 +65,7 @@ Scénarios complémentaires testés :
   reçoit « Je n'ai pas pu récupérer les données. Reformulez votre question. »
 - **Modèle remplacé** : `llama-3.3-70b-versatile` (spécifié initialement)
   a été retiré par Groq ; l'application utilise `openai/gpt-oss-120b`.
-- **Format des dates** : Prisma stocke les DATETIME SQLite en millisecondes
-  Unix ; le prompt impose la conversion `datetime(col/1000,'unixepoch')`.
-  Une requête écrite sans cette conversion renverrait des résultats vides.
+- **Format des dates** : sur Turso, Prisma stocke les DATETIME en TEXTE
+  ISO 8601 (et non en millisecondes Unix comme sur le fichier SQLite local).
+  Le prompt décrit ce format et interdit le modificateur `'start of week'`,
+  qui n'existe pas en SQLite et renvoie NULL (donc aucun résultat).

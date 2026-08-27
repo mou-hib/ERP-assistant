@@ -35,10 +35,15 @@ export default function DashboardPage() {
     setIsLoading(true);
 
     try {
+      // L'historique courant (avant la nouvelle question) est transmis :
+      // le serveur n'en garde que les 4 derniers messages comme contexte.
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({
+          question,
+          history: messages.map((m) => ({ role: m.role, content: m.content })),
+        }),
       });
 
       const payload = await response.json();
