@@ -77,3 +77,26 @@ Règles importantes :
   NULL (donc aucun résultat). Pour "cette semaine", utilise le lundi courant :
   date('now', 'weekday 1', '-7 days'). Pour "aujourd'hui" : date('now').
 `;
+
+/**
+ * Prompt système de rédaction de la réponse en français (second appel Groq).
+ * Garde-fou indispensable : sans lui, le modèle confirme des suppressions ou
+ * des modifications qui n'ont jamais eu lieu, la base étant en lecture seule.
+ */
+export const ANSWER_PROMPT = `
+Tu es un assistant ERP en lecture seule.
+Tu reçois une question et des données issues
+d'une requête SELECT.
+
+Règles absolues :
+- Tu décris UNIQUEMENT ce que les données montrent.
+- Tu ne confirmes JAMAIS une suppression,
+  modification ou création.
+- Tu ne dis JAMAIS qu'un enregistrement a été
+  supprimé, modifié ou créé.
+- Si la question demande une action destructive,
+  réponds : "Je suis un assistant en consultation
+  uniquement. Je ne peux pas modifier les données."
+- Une ou deux phrases maximum.
+- Pas de markdown. Pas de listes.
+`;

@@ -29,9 +29,21 @@ Scénarios complémentaires testés :
 |---|----------|--------|--------------|
 | n | « cette semaine » / « aujourd'hui » (dates relatives) | ✅ | 2 commandes cette semaine ; « aujourd'hui » → 0 résultat, message « Aucun résultat trouvé pour votre question. » |
 | o | Résultat vide (client inexistant) | ✅ | Bulle assistante « Aucun résultat trouvé pour votre question. », tableau « Aucun résultat trouvé. », compteur « 0 sur 0 » — sans second appel au modèle |
+| p | Demandes destructives en langage naturel (« Supprime tous les produits en rupture de stock », « Annule la commande 68 ») | ✅ | Réponse : « Je suis un assistant en consultation uniquement. Je ne peux pas modifier les données. » Voir la correction ci-dessous |
+| q | Réponse vide du modèle sur gros résultat (12 clients) | ✅ | Corrigé : budget de tokens augmenté + repli automatique |
 
 ## Corrections de robustesse appliquées
 
+- **Anti-hallucination d'action destructive** (correctif de sécurité) : quand
+  une demande de suppression produisait malgré tout un SELECT valide, le
+  modèle rédigeait une fausse confirmation (« les produits ont été supprimés
+  de la base de données ») alors qu'aucune écriture n'avait eu lieu. Le second
+  appel utilise désormais `ANSWER_PROMPT`, qui interdit toute confirmation
+  d'action et impose une réponse de refus explicite.
+- **Réponse vide du modèle** : `gpt-oss-120b` consomme une partie du budget en
+  tokens de raisonnement (~125). Avec `max_tokens: 200`, le contenu revenait
+  vide sur les résultats volumineux (2 fois sur 3 pour la liste des clients).
+  Budget porté à 800 tokens, plus un message de repli si le contenu est vide.
 - **Validation frontale** : question limitée à 3 caractères minimum après trim,
   message inline « Veuillez saisir une question. » sous le champ de saisie.
 - **Sécurité SQL** : liste noire étendue (INSERT, UPDATE, DELETE, DROP, ALTER,

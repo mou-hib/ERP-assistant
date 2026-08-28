@@ -12,7 +12,7 @@
 import { NextResponse } from "next/server";
 import { groq } from "@/lib/groq";
 import { prisma } from "@/lib/prisma";
-import { SYSTEM_PROMPT } from "@/lib/prompt";
+import { ANSWER_PROMPT, SYSTEM_PROMPT } from "@/lib/prompt";
 
 // "llama-3.3-70b-versatile" (spécifié initialement) a été retiré par Groq ;
 // gpt-oss-120b est le meilleur modèle disponible sur ce compte.
@@ -178,21 +178,27 @@ export async function POST(req: Request) {
     const completion = await completeWithTimeout({
       model: MODEL,
       messages: [
-        {
-          role: "system",
-          content:
-            "Tu es un assistant ERP. Tu reçois une question en français et des données brutes. Tu rédiges une réponse claire et concise en français. Une ou deux phrases maximum. Pas de markdown. Pas de listes.",
-        },
+        { role: "system", content: ANSWER_PROMPT },
         {
           role: "user",
           content: `Question: ${question}\n\nDonnées: ${JSON.stringify(rows)}`,
         },
       ],
       temperature: 0.3,
-      max_tokens: 200,
+      // gpt-oss-120b consomme une partie du budget en tokens de raisonnement
+      // (~125 en moyenne) : une limite trop basse renvoie un contenu vide.
+      // La brièveté de la réponse est imposée par le prompt, pas par max_tokens.
+      max_tokens: 800,
     });
 
     answer = (completion.choices[0]?.message?.content ?? "").trim();
+
+    // Filet de sécurité : ne jamais afficher une bulle vide
+    if (answer === "") {
+      answer = `${rows.length} résultat${rows.length > 1 ? "s" : ""} trouvé${
+        rows.length > 1 ? "s" : ""
+      }. Les données sont affichées dans le tableau.`;
+    }
   } catch (err) {
     if (err instanceof GroqTimeoutError) return TIMEOUT_RESPONSE();
     console.error("[/api/chat] Erreur Groq (rédaction) :", err);
