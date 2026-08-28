@@ -20,6 +20,10 @@ const MODEL = "openai/gpt-oss-120b";
 
 const GROQ_TIMEOUT_MS = 15_000;
 
+// Nombre maximal de lignes renvoyées par une requête générée.
+// Plafond appliqué côté serveur, indépendamment du LIMIT produit par le modèle.
+const MAX_ROWS = 100;
+
 // Mots-clés interdits dans le SQL généré (consultation uniquement)
 const FORBIDDEN =
   /\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)\b/i;
@@ -150,10 +154,15 @@ export async function POST(req: Request) {
   }
 
   // ÉTAPE 4 — Exécuter le SQL via Prisma
+  // Le plafond de lignes est imposé côté serveur : si le modèle omet LIMIT,
+  // la requête est enveloppée pour éviter de ramener toute une table.
   let rows: Record<string, unknown>[];
   try {
-    const result = await prisma.$queryRawUnsafe(sql);
-    rows = sanitizeRows(result);
+    const safeSql = /\bLIMIT\s+\d+/i.test(sql)
+      ? sql
+      : `SELECT * FROM (${sql.replace(/;\s*$/, "")}) LIMIT ${MAX_ROWS}`;
+    const result = await prisma.$queryRawUnsafe(safeSql);
+    rows = sanitizeRows(result).slice(0, MAX_ROWS);
   } catch (err) {
     console.error("[/api/chat] Échec d'exécution SQL :", err);
     return NextResponse.json(

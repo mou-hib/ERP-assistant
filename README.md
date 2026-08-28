@@ -32,7 +32,9 @@ cp .env.example .env
 Remplir les variables dans `.env` :
 
 - `TURSO_DATABASE_URL` : URL de la base (`turso db show <nom> --url`)
-- `TURSO_AUTH_TOKEN` : token de base de données (`turso db tokens create <nom>`)
+- `TURSO_AUTH_TOKEN` : token de base de données (`turso db tokens create <nom>`).
+  **En production, générer un token en lecture seule** :
+  `turso db tokens create <nom> --read-only`
 - `AUTH_SECRET` : générer avec `openssl rand -base64 32`
 - `GROQ_API_KEY` : obtenir sur [console.groq.com](https://console.groq.com)
 - `NEXTAUTH_URL` : `http://localhost:3000` en local
@@ -44,6 +46,8 @@ Remplir les variables dans `.env` :
 turso db create erp-assistant
 turso db show erp-assistant --url        # → TURSO_DATABASE_URL
 turso db tokens create erp-assistant     # → TURSO_AUTH_TOKEN
+# En production, préférer un token en lecture seule :
+turso db tokens create erp-assistant --read-only
 
 # 2. Appliquer le schéma (les migrations Prisma, dans l'ordre)
 cat prisma/migrations/*/migration.sql | turso db shell erp-assistant
@@ -56,6 +60,12 @@ npx prisma db seed
 > Note : `prisma migrate dev` ne sait pas se connecter directement à une URL
 > `libsql://` ; les migrations s'appliquent via le CLI `turso` (étape 2).
 > Le seed, lui, passe par l'adaptateur libSQL et fonctionne normalement.
+
+> Sécurité : l'application n'exécute que des `SELECT` (validation applicative
+> et plafond de lignes appliqués côté serveur). En production, utiliser un
+> token Turso **en lecture seule** : aucune écriture n'est alors possible avec
+> ce token, quelles que soient les requêtes envoyées. Les migrations et le seed
+> (étapes 2 et 3) nécessitent en revanche un token en écriture.
 
 ## Lancement
 
@@ -75,7 +85,7 @@ Contacter le mainteneur du projet pour obtenir un accès de démonstration.
 | Variable             | Description                                  | Obligatoire |
 | -------------------- | -------------------------------------------- | ----------- |
 | `TURSO_DATABASE_URL` | URL libSQL de la base Turso                  | Oui         |
-| `TURSO_AUTH_TOKEN`   | Token d'accès à la base Turso                | Oui         |
+| `TURSO_AUTH_TOKEN`   | Token d'accès Turso (lecture seule en prod)  | Oui         |
 | `AUTH_SECRET`        | Secret JWT pour Auth.js                      | Oui         |
 | `GROQ_API_KEY`       | Clé API Groq                                 | Oui         |
 | `NEXTAUTH_URL`       | URL de base de l'application                 | Oui         |
