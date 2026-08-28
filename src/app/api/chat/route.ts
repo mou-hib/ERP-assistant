@@ -16,7 +16,7 @@ import { ANSWER_PROMPT, SYSTEM_PROMPT } from "@/lib/prompt";
 
 // "llama-3.3-70b-versatile" (spécifié initialement) a été retiré par Groq ;
 // gpt-oss-120b est le meilleur modèle disponible sur ce compte.
-const MODEL = "openai/gpt-oss-120b";
+const MODEL = "llama-3.3-70b-versatile";
 
 const GROQ_TIMEOUT_MS = 15_000;
 
