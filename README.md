@@ -67,10 +67,8 @@ L'application est accessible sur [http://localhost:3000](http://localhost:3000).
 
 ## Identifiants de démonstration
 
-```
-Email        : admin@erp.com
-Mot de passe : admin123
-```
+Les identifiants de démonstration ne sont pas publiés dans ce dépôt.
+Contacter le mainteneur du projet pour obtenir un accès de démonstration.
 
 ## Variables d'environnement
 
