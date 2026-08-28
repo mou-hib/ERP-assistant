@@ -7,6 +7,9 @@ export interface Message {
   role: Role;
   content: string;
   timestamp: Date;
+  // Requête SQL ayant produit la réponse (absente sur le message d'accueil
+  // et sur les messages d'erreur)
+  sql?: string;
 }
 
 // Lignes de résultats affichées dans le tableau (colonnes dynamiques)

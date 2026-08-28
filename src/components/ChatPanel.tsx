@@ -9,6 +9,27 @@ const SUGGESTIONS = [
   "Solde de la facture Dupont",
 ];
 
+const SQL_KEYWORDS =
+  /\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|LEFT JOIN|INNER JOIN|JOIN|ON|LIMIT|LEFT|INNER|AND|OR|AS|COUNT|SUM|AVG|LIKE|IN|NOT|NULL|HAVING|DISTINCT|DESC|ASC)\b/gi;
+
+// Le SQL provient du modèle : il est échappé AVANT toute insertion en HTML,
+// sinon une chaîne littérale malveillante deviendrait du balisage exécutable.
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function highlightSql(sql: string): string {
+  return escapeHtml(sql).replace(
+    SQL_KEYWORDS,
+    '<span class="sql-kw">$1</span>'
+  );
+}
+
 interface ChatPanelProps {
   messages: Message[];
   isLoading: boolean;
@@ -18,8 +39,14 @@ interface ChatPanelProps {
 export default function ChatPanel({ messages, isLoading, onSend }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
+  // Identifiants des messages dont la requête SQL est dépliée
+  const [openSql, setOpenSql] = useState<Record<string, boolean>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  function toggleSql(id: string) {
+    setOpenSql((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
 
   // Défilement automatique vers le dernier message
   useEffect(() => {
@@ -52,19 +79,47 @@ export default function ChatPanel({ messages, isLoading, onSend }: ChatPanelProp
       {/* Historique des messages */}
       <div className="chat-messages">
         {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`msg-row${message.role === "user" ? " msg-row--user" : ""}`}
-          >
+          <div key={message.id}>
             <div
-              className={`msg-bubble ${
-                message.role === "user"
-                  ? "msg-bubble--user"
-                  : "msg-bubble--assistant"
-              }`}
+              className={`msg-row${message.role === "user" ? " msg-row--user" : ""}`}
             >
-              {message.content}
+              <div
+                className={`msg-bubble ${
+                  message.role === "user"
+                    ? "msg-bubble--user"
+                    : "msg-bubble--assistant"
+                }`}
+              >
+                {message.content}
+              </div>
             </div>
+
+            {/* Requête SQL : uniquement sur les réponses issues de la base
+                (ni le message d'accueil, ni les messages d'erreur) */}
+            {message.role === "assistant" && message.sql && (
+              <>
+                <button
+                  type="button"
+                  className="sql-toggle"
+                  onClick={() => toggleSql(message.id)}
+                  aria-expanded={!!openSql[message.id]}
+                >
+                  <span aria-hidden="true">{"{ }"}</span>
+                  {openSql[message.id]
+                    ? "Masquer la requête SQL"
+                    : "Voir la requête SQL"}
+                </button>
+
+                {openSql[message.id] && (
+                  <pre
+                    className="sql-block"
+                    dangerouslySetInnerHTML={{
+                      __html: highlightSql(message.sql),
+                    }}
+                  />
+                )}
+              </>
+            )}
           </div>
         ))}
 

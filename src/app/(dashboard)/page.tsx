@@ -49,7 +49,10 @@ export default function DashboardPage() {
       const payload = await response.json();
 
       if (response.ok) {
-        setMessages((prev) => [...prev, assistantMessage(payload.answer)]);
+        setMessages((prev) => [
+          ...prev,
+          { ...assistantMessage(payload.answer), sql: payload.sql },
+        ]);
         setData(payload.data);
         const firstRow = payload.data?.[0];
         setTitle(
