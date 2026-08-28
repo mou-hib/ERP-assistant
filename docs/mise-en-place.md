@@ -148,7 +148,7 @@ Le `tsconfig.json` généré par create-next-app ne définit pas de `target` ; t
 ### `auth.ts` (racine du projet)
 
 - Provider **Credentials** uniquement.
-- **Un seul utilisateur codé en dur** : `admin@erp.com` / `admin123`. Le mot de passe est stocké sous forme de **hash bcrypt** (pré-calculé, coût 10) et vérifié avec `bcrypt.compareSync`.
+- **Un seul utilisateur codé en dur** : `admin@erp.com`. Le mot de passe n'est pas publié dans le dépôt (demander l'accès au mainteneur) ; seul son **hash bcrypt** (pré-calculé, coût 10) est stocké, et il est vérifié avec `bcrypt.compareSync`.
 - Stratégie de session **JWT**.
 - Callbacks `jwt` et `session` pour que la session contienne `id`, `email`, `name`.
 - `pages: { signIn: "/login" }` pour utiliser notre propre page de connexion.
@@ -261,7 +261,7 @@ Tout a été vérifié réellement :
 | Compilation TypeScript | `npx tsc --noEmit` | ✅ 0 erreur |
 | Contenu de la base | requêtes SQL directes | ✅ 12 clients, 18 produits (4 en rupture), 25 commandes (5 statuts), 53 lignes, 25 factures, 21 paiements (4 modes) |
 | Redirection si non connecté | navigateur : visite de `/` | ✅ redirigé vers `/login` |
-| Connexion | navigateur : `admin@erp.com` / `admin123` | ✅ dashboard affiché (Navbar + email + Déconnexion) |
+| Connexion | navigateur : `admin@erp.com` + mot de passe de démonstration | ✅ dashboard affiché (Navbar + email + Déconnexion) |
 | Erreurs serveur | logs de `npm run dev` | ✅ aucune |
 | Prisma Studio | `npx prisma studio` puis requête HTTP sur le port 5555 | ✅ HTTP 200 |
 

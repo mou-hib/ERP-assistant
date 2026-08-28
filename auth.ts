@@ -2,12 +2,13 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
-// Utilisateur unique codé en dur (mot de passe : admin123)
+// Utilisateur unique codé en dur. Le mot de passe n'est pas documenté ici :
+// seul son hash bcrypt est stocké. Demander l'accès au mainteneur du projet.
 const ADMIN_USER = {
   id: "1",
   name: "Administrateur",
   email: "admin@erp.com",
-  passwordHash: "$2b$10$cdPr9oT7FzLSISQC7dvb.ODndbYIIQolQg0XN0HuMsSNonYmvZ1ry",
+  passwordHash: "$2b$10$WXJxXnjltiGTmftMp.HPj.2ZA09NvyuGTOZGi/3.AVwVPD4jcNQ/y",
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
