@@ -38,6 +38,12 @@ Remplir les variables dans `.env` :
 - `AUTH_SECRET` : générer avec `openssl rand -base64 32`
 - `GROQ_API_KEY` : obtenir sur [console.groq.com](https://console.groq.com)
 - `NEXTAUTH_URL` : `http://localhost:3000` en local
+- `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` : identifiants REST
+  d'une base Upstash Redis ([console.upstash.com](https://console.upstash.com)),
+  utilisés pour limiter `/api/chat` à 20 questions par heure et par utilisateur.
+  Avec l'intégration Upstash de Vercel, ce sont les variables `KV_REST_API_URL`
+  et `KV_REST_API_TOKEN` qui sont injectées : les deux conventions fonctionnent.
+  Le token doit être en **lecture-écriture** (les compteurs sont incrémentés)
 
 ## Base de données (Turso)
 
@@ -89,6 +95,11 @@ Contacter le mainteneur du projet pour obtenir un accès de démonstration.
 | `AUTH_SECRET`        | Secret JWT pour Auth.js                      | Oui         |
 | `GROQ_API_KEY`       | Clé API Groq                                 | Oui         |
 | `NEXTAUTH_URL`       | URL de base de l'application                 | Oui         |
+| `UPSTASH_REDIS_REST_URL`   | Upstash Redis — limitation de débit    | Oui¹      |
+| `UPSTASH_REDIS_REST_TOKEN` | Token REST Upstash (lecture-écriture)  | Oui¹      |
+
+¹ Ou `KV_REST_API_URL` / `KV_REST_API_TOKEN` si la base Upstash est créée via
+l'intégration Vercel, qui injecte ces noms automatiquement.
 
 ## Stack technique
 

@@ -1,6 +1,7 @@
 /**
  * Route POST /api/chat
- * Pipeline IA en 6 étapes :
+ * Pipeline IA en 6 étapes, précédé d'un contrôle d'accès :
+ * 0. Authentification (auth()) + limitation de débit par utilisateur
  * 1. Validation de la question et de l'historique (sécurité, longueur)
  * 2. Génération SQL via Groq (gpt-oss-120b) + schéma BDD
  *    + contexte des 4 derniers échanges (questions de suivi)
@@ -10,6 +11,9 @@
  * 6. Retour JSON { answer, data, sql, count }
  */
 import { NextResponse } from "next/server";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { auth } from "@auth";
 import { groq } from "@/lib/groq";
 import { prisma } from "@/lib/prisma";
 import { ANSWER_PROMPT, SYSTEM_PROMPT } from "@/lib/prompt";
@@ -19,6 +23,25 @@ import { ANSWER_PROMPT, SYSTEM_PROMPT } from "@/lib/prompt";
 const MODEL = "openai/gpt-oss-120b";
 
 const GROQ_TIMEOUT_MS = 15_000;
+
+// Limitation de débit : 20 questions par heure et par utilisateur, en
+// fenêtre glissante. Le compteur est partagé via Upstash Redis, donc
+// cohérent entre les instances serverless.
+//
+// L'intégration Upstash de Vercel provisionne les variables préfixées `KV_` ;
+// une configuration manuelle (console Upstash) utilise les noms
+// `UPSTASH_REDIS_REST_*`. Les deux sont acceptées. Sans l'une de ces paires,
+// l'appel à limit() échoue et /api/chat renvoie une erreur 500.
+//
+// Le token doit être en LECTURE-ÉCRITURE (KV_REST_API_TOKEN) : la limitation
+// de débit incrémente des compteurs. KV_REST_API_READ_ONLY_TOKEN ne convient pas.
+const limiter = new Ratelimit({
+  redis: new Redis({
+    url: process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL ?? "",
+    token: process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN ?? "",
+  }),
+  limiter: Ratelimit.slidingWindow(20, "1 h"),
+});
 
 // Nombre maximal de lignes renvoyées par une requête générée.
 // Plafond appliqué côté serveur, indépendamment du LIMIT produit par le modèle.
@@ -95,6 +118,24 @@ function sanitizeHistory(raw: unknown): HistoryMessage[] {
 }
 
 export async function POST(req: Request) {
+  // ÉTAPE 0 — Authentification (le middleware protège déjà la route ;
+  // ce contrôle la rend autonome) puis limitation de débit par utilisateur.
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Session expirée. Veuillez vous reconnecter." },
+      { status: 401 }
+    );
+  }
+
+  const { success } = await limiter.limit(session.user.email!);
+  if (!success) {
+    return NextResponse.json(
+      { error: "Trop de questions. Réessayez dans quelques minutes." },
+      { status: 429 }
+    );
+  }
+
   // ÉTAPE 1 — Lire la question et l'historique
   let question: unknown;
   let history: HistoryMessage[] = [];
